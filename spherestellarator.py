@@ -1,29 +1,36 @@
-# KNOWN ERROR, default sphere cad model has preexisting slice
+# KNOWN ERROR, default sphere/stellarator cad model has preexisting slice
+# Slicing works for slices = 20
 # Syn Hubbard (CNERG)
-
 
 # Import statements for calculations and export
 import cadquery as cq
 import math
 from cadquery import exporters
 import read_vmec
-
+vmec = read_vmec.vmec_data(r'C:\Users\vich2\Downloads\plas_eq.nc') # Global scope of data
 
 # Create the spherical surface so it can be split accordingly
 def getBody (radius):
     return cq.Workplane().sphere(radius)
 
-# Export
-def export(sphericalSurface):
-    exporters.export(sphericalSurface, './sphericalSurface.stl')
+# Export function
+def export(surface):
+    exporters.export(surface, './surface.stl')
+
+# Using the data, lets map the coordinates
+def func(u: float, v: float) -> tuple[float, float, float]:
+    s = 1.0
+    theta = v * 2 * math.pi  # Map v to theta in the range [0, 2*pi]
+    phi = u * 2 * math.pi
+    x, y, z = vmec.vmec2xyz(s, theta, phi)
+    return x, y, z
 
 def main():
-    vmec = read_vmec.vmec_data(r'C:\Users\vich2\Downloads\plas_eq.nc')
-    # x, y, z =vmec.vmec2xyz(s, theta, phi) -> s = 1
-    # stellarator = parametricSurface((x, y, z),20,0.0,1.0,1e-3,1,3,(1,1,1))
-    # show_object(stellarator)
+    stellarator = cq.Workplane("XY").parametricSurface(func,60,0.0,1.0)
+    show_object(stellarator)
+    
     # Define parameters for splitting, in reality, it would be nice for this to be inputted by the user
-    slices = 20  # replace integer literals -> prompt for slices
+    """ slices = 20  # replace integer literals -> prompt for slices
     radius = 1
     shellThickness = 0.05
     thetaIncrement = (2 * math.pi) / slices
@@ -35,8 +42,6 @@ def main():
 
     # In the longitudinal direction, split sphere
     for index in range(slices):
-        if (index == 0):
-            sphericalSurface.rotateAboutCenter((2 * math.pi/slices),0,0)
         angle = (index * thetaIncrement)
         Tcos = math.cos(angle)
         Tsin = math.sin(angle)
@@ -50,6 +55,6 @@ def main():
         sphericalSurface = sphericalSurface.split(splittingPlaneLat)
 
     show_object(sphericalSurface)
-    export(sphericalSurface)
+    export(sphericalSurface) """
 
 main()
