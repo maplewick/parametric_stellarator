@@ -1,5 +1,3 @@
-# Syn Hubbard (CNERG)
-
 # Import statements for calculations and export
 import cadquery as cq
 import math
