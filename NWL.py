@@ -140,16 +140,6 @@ This is where Syn's work will go to compute surface area of each bin :)
 # Initialize arrays with beginning points, then iterate over mid points
 num_phi_bins = len(phi_bins_cent) - 2
 num_theta_bins = len(theta_bins_cent) - 2
-surf_area_mat = []
-phi_bins_boundaries = [0.0]
-theta_bins_boundaries = [-pol_ext/2]
-vectors_1 = []
-vectors_2 = []
-
-# Adjust bin boundaries so that it accurately describes endpoints
-# Initialize arrays with beginning points, then iterate over mid points
-num_phi_bins = len(phi_bins_cent) - 2
-num_theta_bins = len(theta_bins_cent) - 2
 phi_bins_boundaries = [0.0]
 theta_bins_boundaries = [-pol_ext/2]
 surf_area_mat = np.zeros((num_phi_bins+2, num_theta_bins+2))
@@ -169,16 +159,14 @@ for i in range(num_phi_bins):
         else:
             theta_bin_boundary = (theta_bins_cent[j] + theta_bins_cent[j+1]) / 2
 
-        vec1 = np.array([wall_s * np.cos(phi_bin_boundary), wall_s * np.sin(phi_bin_boundary), 0.0])
-        vec2 = np.array([-wall_s * np.sin(phi_bin_boundary) * np.sin(theta_bin_boundary),
-                         wall_s * np.cos(phi_bin_boundary) * np.sin(theta_bin_boundary),
-                         wall_s * np.cos(theta_bin_boundary)])
+        vec1 = vmec.vmec2xyz(wall_s, theta_bin_boundary, phi_bin_boundary)
+        vec2 = vmec.vmec2xyz(wall_s, theta, phi)
         
         # Compute surface area and store it in the matrix
         area_vector = np.cross(vec1, vec2)
         surf_area = np.linalg.norm(area_vector)
         surf_area_mat[i, j] = surf_area
-        
+
 # Plot NWL normalized by surface area
 NWL_mat_normalized = NWL_mat / surf_area_mat
 
