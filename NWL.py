@@ -137,39 +137,39 @@ NWL_mat = count_mat*n_energy*eV2J*SS*J2MJ/num_parts
 This is where Syn's work will go to compute surface area of each bin :)
 """
 # Adjust bin boundaries so that it accurately describes endpoints
-# Initialize surface area matrix
+# Initialize arrays with beginning points, then interate over mid points
 num_phi_bins = len(phi_bins_cent) - 2
 num_theta_bins = len(theta_bins_cent) - 2
 surf_area_mat = []
 phi_bins_boundaries = [0.0]
 theta_bins_boundaries = [-pol_ext/2]
-
-for i in range(num_phi_bins):
-    phi_bin_boundary = (phi_bins_cent[i] + phi_bins_cent[i+1])/2
-    phi_bins_boundaries.append(phi_bin_boundary)
-
-for i in range(num_theta_bins):
-    theta_bins_boundary = (theta_bins_cent[i] + theta_bins_cent[i+1])/2
-    theta_bins_boundaries.append(theta_bins_boundary)
-
-phi_bins_boundaries.append(tor_ext)
-theta_bins_boundaries.append(pol_ext/2)
-
-print(phi_bins_boundaries)
-print(theta_bins_boundaries)
+vectors_1 = []
+vectors_2= []
 
 # Compute vectors defining the bin in Cartesian coordinates
-#TODO CHECK TO MAKE SURE VECTORS ARE ACCURATE
-vec1 = np.array([wall_s * np.cos(phi_bin_boundary), wall_s * np.sin(phi_bin_boundary), 0.0])
-vec2 = np.array([-wall_s * np.sin(phi_bin_boundary) * np.sin(theta_bins_boundary),
-                         wall_s * np.cos(phi_bin_boundary) * np.sin(theta_bins_boundary),
-                         wall_s * np.cos(theta_bins_boundary)])
-
-#TODO CHECK TO MAKE SURE VECTORS ARE ACCURATE
+# TODO: CHECK TO MAKE SURE VECTORS ARE ACCURATE
 for i in range(num_phi_bins):
-    area_vector = np.cross(vec1, vec2)
+    if i == num_phi_bins - 1:
+        phi_bin_boundary = 2*np.pi
+    else:
+        phi_bin_boundary = (phi_bins_cent[i] + phi_bins_cent[i+1]) / 2
+    for j in range(num_theta_bins):
+        if j == num_theta_bins - 1:
+            theta_bin_boundary = 2*np.pi
+        else:
+            theta_bin_boundary = (theta_bins_cent[j] + theta_bins_cent[j+1]) / 2
+            
+    vec1 = np.array([wall_s * np.cos(phi_bin_boundary), wall_s * np.sin(phi_bin_boundary), 0.0])
+    vec2 = np.array([-wall_s * np.sin(phi_bin_boundary) * np.sin(theta_bin_boundary),
+                         wall_s * np.cos(phi_bin_boundary) * np.sin(theta_bin_boundary),
+                         wall_s * np.cos(theta_bin_boundary)])
+    vectors_1.append(vec1)
+    vectors_2.append(vec2)
+
+for i in range(num_phi_bins):
+    area_vector = np.cross(vectors_1[i], vectors_2[i])
     surf_area = np.linalg.norm(area_vector)
-    surf_area_mat[i] = surf_area
+    surf_area_mat.append(surf_area)
 
 # Plot NWL normalized by surface area
 NWL_mat_normalized = NWL_mat / surf_area_mat
