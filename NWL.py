@@ -136,22 +136,18 @@ NWL_mat = count_mat*n_energy*eV2J*SS*J2MJ/num_parts
 """
 This is where Syn's work will go to compute surface area of each bin :)
 """
-# vmec2xyz(phi list, theta list)
-# A = 1/2(r[2:,:]] - r[i-2,i-2]) x (r[i,2i]-r[i,j])
-
-# Compute vectors defining the bin in Cartesian coordinates
-# TODO: CHECK TO MAKE SURE VECTORS ARE ACCURATE
 # Adjust bin boundaries to accurately describe endpoints
+# Bin boundaries should have bounds of [0, ....., 90], [-180, ......, 180]
 phi_bins_boundaries = np.linspace(0.0, tor_ext, num_phi + 1)
 theta_bins_boundaries = np.linspace(-pol_ext/2, pol_ext/2, num_theta + 1)
 
-# Initialize surface area matrix
+# Initialize surface area matrix so that is 
 surf_area_mat = np.zeros((num_phi, num_theta))
 
 # Compute surface area for each bin
 for i in range(num_phi):
     for j in range(num_theta):
-        # Convert polar coordinates to Cartesian coordinates for the four corners of the bin
+        # Convert VMEC coordinates to Cartesian coordinates for the four corners of the bin (i.e. r1, r2, r3, r4)
         # Lower left corner
         pt1 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j], phi_bins_boundaries[i]))
         # Lower right corner
@@ -165,17 +161,16 @@ for i in range(num_phi):
         vector1 = pt2 - pt1
         vector2 = pt3 - pt1
 
-        # Compute the cross product of the vectors to find the area of the parallelogram
+        # Compute the cross product of the vectors to find the area of cross section
         cross_prod = np.cross(vector1, vector2)
 
-        # The area of the bin is half the magnitude of the cross product vector
+        # Since each bin has a triangular area it should be halved
         bin_area = 0.5 * np.linalg.norm(cross_prod)
 
         # Store the computed area in the surface area matrix
         surf_area_mat[i, j] = NWL_mat[i,j] / bin_area
         
-
-# Plot NWL
+# Plot Normalized NWL
 levels = np.linspace(np.min(surf_area_mat), np.max(surf_area_mat), num = 101)
 fig, ax = plt.subplots()
 CF = ax.contourf(phi_bins_cent, theta_bins_cent, surf_area_mat, levels = levels)
