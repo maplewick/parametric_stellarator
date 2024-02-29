@@ -158,17 +158,32 @@ for i in range(num_phi):
         pt4 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j + 1], phi_bins_boundaries[i + 1]))
 
         # Compute vectors along the bin edges
-        vector1 = pt2 - pt1
-        vector2 = pt3 - pt1
+        vector1 = pt4 - pt3
+        vector2 = pt1 - pt3
+        vector3 = pt4 - pt2
+        vector4 = pt1 - pt2
 
-        # Compute the cross product of the vectors to find the area of cross section
-        cross_prod = np.cross(vector1, vector2)
+        # Second set of vectors used for aggregation 
+        vector5 = pt3 - pt4
+        vector6 = pt2 - pt4
+        vector7 = pt2 - pt1
+        vector8 = pt3 - pt1
 
-        # Since each bin has a triangular area it should be halved
-        bin_area = 0.5 * np.linalg.norm(cross_prod)
+        # Compute the cross product of the vectors to find the area of cross section (set 1)
+        cross_prod1 = np.cross(vector1, vector2)
+        cross_prod2 = np.cross(vector3, vector4)
+        cross_prod3 = np.cross(vector5, vector6)
+        cross_prod4 = np.cross(vector7, vector8)
+
+        # Since each bin has a triangular area it is one half the bin area 
+        bin_area1 = 0.5 * np.linalg.norm(cross_prod1)
+        bin_area2 = 0.5 * np.linalg.norm(cross_prod2)
+        bin_area3 = 0.5 * np.linalg.norm(cross_prod3)
+        bin_area4 = 0.5 * np.linalg.norm(cross_prod4)
+        bin_area_avg = (bin_area1 + bin_area2 + bin_area3 + bin_area4) / 2
 
         # Store the computed area in the surface area matrix
-        surf_area_mat[i, j] = NWL_mat[i,j] / bin_area
+        surf_area_mat[i, j] = NWL_mat[i,j] / (bin_area_avg)
         
 # Plot Normalized NWL
 levels = np.linspace(np.min(surf_area_mat), np.max(surf_area_mat), num = 101)
