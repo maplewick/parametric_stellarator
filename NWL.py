@@ -136,46 +136,51 @@ NWL_mat = count_mat*n_energy*eV2J*SS*J2MJ/num_parts
 """
 This is where Syn's work will go to compute surface area of each bin :)
 """
-# Adjust bin boundaries so that it accurately describes endpoints
-# Initialize arrays with beginning points, then iterate over mid points
-num_phi_bins = len(phi_bins_cent) - 2
-num_theta_bins = len(theta_bins_cent) - 2
-phi_bins_boundaries = [0.0]
-theta_bins_boundaries = [-pol_ext/2]
-surf_area_mat = np.zeros((num_phi_bins+2, num_theta_bins+2))
-vectors_1 = []
-vectors_2 = []
+# vmec2xyz(phi list, theta list)
+# A = 1/2(r[2:,:]] - r[i-2,i-2]) x (r[i,2i]-r[i,j])
 
 # Compute vectors defining the bin in Cartesian coordinates
 # TODO: CHECK TO MAKE SURE VECTORS ARE ACCURATE
-for i in range(num_phi_bins):
-    if i == num_phi_bins - 1:
-        phi_bin_boundary = 2 * np.pi
-    else:
-        phi_bin_boundary = (phi_bins_cent[i] + phi_bins_cent[i+1]) / 2
-    for j in range(num_theta_bins):
-        if j == num_theta_bins - 1:
-            theta_bin_boundary = 2 * np.pi
-        else:
-            theta_bin_boundary = (theta_bins_cent[j] + theta_bins_cent[j+1]) / 2
+# Adjust bin boundaries to accurately describe endpoints
+phi_bins_boundaries = np.linspace(0.0, tor_ext, num_phi + 1)
+theta_bins_boundaries = np.linspace(-pol_ext/2, pol_ext/2, num_theta + 1)
 
-        vec1 = vmec.vmec2xyz(wall_s, theta_bin_boundary, phi_bin_boundary)
-        vec2 = vmec.vmec2xyz(wall_s, theta, phi)
+# Initialize surface area matrix
+surf_area_mat = np.zeros((num_phi, num_theta))
+
+# Compute surface area for each bin
+for i in range(num_phi):
+    for j in range(num_theta):
+        # Convert polar coordinates to Cartesian coordinates for the four corners of the bin
+        # Lower left corner
+        pt1 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j], phi_bins_boundaries[i]))
+        # Lower right corner
+        pt2 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j], phi_bins_boundaries[i + 1]))
+        # Upper left corner
+        pt3 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j + 1], phi_bins_boundaries[i]))
+        # Upper right corner
+        pt4 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j + 1], phi_bins_boundaries[i + 1]))
+
+        # Compute vectors along the bin edges
+        vector1 = pt2 - pt1
+        vector2 = pt3 - pt1
+
+        # Compute the cross product of the vectors to find the area of the parallelogram
+        cross_prod = np.cross(vector1, vector2)
+
+        # The area of the bin is half the magnitude of the cross product vector
+        bin_area = 0.5 * np.linalg.norm(cross_prod)
+
+        # Store the computed area in the surface area matrix
+        surf_area_mat[i, j] = NWL_mat[i,j] / bin_area
         
-        # Compute surface area and store it in the matrix
-        area_vector = np.cross(vec1, vec2)
-        surf_area = np.linalg.norm(area_vector)
-        surf_area_mat[i, j] = surf_area
-
-# Plot NWL normalized by surface area
-NWL_mat_normalized = NWL_mat / surf_area_mat
 
 # Plot NWL
-levels = np.linspace(np.min(NWL_mat), np.max(NWL_mat), num = 101)
+levels = np.linspace(np.min(surf_area_mat), np.max(surf_area_mat), num = 101)
 fig, ax = plt.subplots()
-CF = ax.contourf(phi_bins_cent, theta_bins_cent, NWL_mat, levels = levels)
+CF = ax.contourf(phi_bins_cent, theta_bins_cent, surf_area_mat, levels = levels)
 cbar = plt.colorbar(CF)
-cbar.ax.set_ylabel('NWL (MW)')
+cbar.ax.set_ylabel('NWL (MW/m^2)')
 plt.xlabel('Toroidal Angle (degrees)')
 plt.ylabel('Poloidal Angle (degrees)')
 fig.savefig('NWL.png')
