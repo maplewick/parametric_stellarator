@@ -60,7 +60,7 @@ def extract_coords(source_file):
 
 
 # Define source file
-source_file = '/Users/synh/Desktop/parastell/parametric_stellarator/surface_source.h5'
+source_file = '/Users/synh/Desktop/parastell/parametric_stellarator/surface_source_new.h5'
 # Extract coordinates of particle crossings
 coords = extract_coords(source_file)
 # Define plasma equilibrium VMEC file
@@ -138,8 +138,11 @@ This is where Syn's work will go to compute surface area of each bin :)
 """
 # Adjust bin boundaries to accurately describe endpoints
 # Bin boundaries should have bounds of [0, ....., 90], [-180, ......, 180]
-phi_bins_boundaries = np.linspace(0.0, tor_ext, num_phi + 1)
-theta_bins_boundaries = np.linspace(-pol_ext/2, pol_ext/2, num_theta + 1)
+
+midpoints_phi = (phi_bins_cent[:-1] + phi_bins_cent[1:]) / 2
+midpoints_theta = (theta_bins_cent[:-1] + theta_bins_cent[1:]) / 2
+phi_bins_boundaries = np.concatenate(([phi_bins_cent[0]], midpoints_phi, [phi_bins_cent[-1]]))
+theta_bins_boundaries = np.concatenate(([theta_bins_cent[0]], midpoints_theta, [theta_bins_cent[-1]]))
 
 # Initialize surface area matrix so that is 
 surf_area_mat = np.zeros((num_phi, num_theta))
@@ -158,16 +161,16 @@ for i in range(num_phi):
         pt4 = np.array(vmec.vmec2xyz(wall_s, theta_bins_boundaries[j + 1], phi_bins_boundaries[i + 1]))
 
         # Compute vectors along the bin edges
-        vector1 = pt4 - pt3
-        vector2 = pt1 - pt3
-        vector3 = pt4 - pt2
-        vector4 = pt1 - pt2
+        vector1 = pt2 - pt1
+        vector2 = pt3 - pt1
+        vector3 = pt3 - pt4
+        vector4 = pt2 - pt4
 
         # Second set of vectors used for aggregation 
-        vector5 = pt3 - pt4
-        vector6 = pt2 - pt4
-        vector7 = pt2 - pt1
-        vector8 = pt3 - pt1
+        vector5 = pt1 - pt3
+        vector6 = pt4 - pt3
+        vector7 = pt4 - pt2
+        vector8 = pt1 - pt2
 
         # Compute the cross product of the vectors to find the area of cross section (set 1)
         cross_prod1 = np.cross(vector1, vector2)
@@ -184,7 +187,7 @@ for i in range(num_phi):
 
         # Store the computed area in the surface area matrix
         surf_area_mat[i, j] = NWL_mat[i,j] / (bin_area_avg)
-        
+
 # Plot Normalized NWL
 levels = np.linspace(np.min(surf_area_mat), np.max(surf_area_mat), num = 101)
 fig, ax = plt.subplots()
